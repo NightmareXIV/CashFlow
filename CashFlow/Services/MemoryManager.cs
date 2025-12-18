@@ -106,7 +106,7 @@ public unsafe class MemoryManager
                 S.EventWatcher.LastClickedItem = null;
                 S.MainWindow.UpdateData(false);
             }
-            PluginLog.Information(MemoryHelper.ReadRaw(packet, 100).ToHexString());
+            //PluginLog.Information(MemoryHelper.ReadRaw(packet, 100).ToHexString());
         }
         catch(Exception e)
         {

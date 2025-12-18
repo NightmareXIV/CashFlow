@@ -23,7 +23,7 @@ public unsafe class TradeDetectionManager : IDisposable
                     PartnerCID = tradePartner.Struct()->ContentId;
                     P.DataProvider.RecordPlayerCID(tradePartner);
                 }
-                Snapshot = Utils.GetInventorySnapshot();
+                Snapshot = Utils.GetInventorySnapshot(Utils.ValidInventories);
             }
             else
             {
@@ -36,7 +36,7 @@ public unsafe class TradeDetectionManager : IDisposable
                 }
                 if(Snapshot != null && PartnerCID != 0)
                 {
-                    var result = Utils.GetTradeResult(PartnerCID, Snapshot, Utils.GetInventorySnapshot());
+                    var result = Utils.GetTradeResult(PartnerCID, Snapshot, Utils.GetInventorySnapshot(Utils.ValidInventories));
                     PluginLog.Information($"Trade result with {tradePartner}:\n{result}");
                     if(result.ReceivedItems.Length != 0 || result.ReceivedGil != 0)
                     {

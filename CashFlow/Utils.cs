@@ -171,14 +171,14 @@ public static unsafe class Utils
         InventoryType.Crystals,
         ];
 
-    public static Dictionary<uint, uint> GetInventorySnapshot()
+    public static Dictionary<uint, uint> GetInventorySnapshot(IEnumerable<InventoryType> validInventories)
     {
         var im = InventoryManager.Instance();
         var ret = new Dictionary<uint, uint>
         {
             [1] = (uint)im->GetInventoryItemCount(1)
         };
-        foreach(var type in ValidInventories)
+        foreach(var type in validInventories)
         {
             var inv = im->GetInventoryContainer(type);
             for(var i = 0; i < inv->GetSize(); i++)
