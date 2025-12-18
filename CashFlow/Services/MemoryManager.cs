@@ -17,6 +17,7 @@ public unsafe class MemoryManager
     {
         EzSignatureHelper.Initialize(this);
         HandleMarketBoardPurchasePacketHook = new((nint)PacketDispatcher.MemberFunctionPointers.HandleMarketBoardPurchasePacket, HandleMarketBoardPurchasePacketDetour);
+        FireCallbackHook = new((nint)AtkUnitBase.MemberFunctionPointers.FireCallback, FireCallbackDetour, false);
     }
 
     public delegate nint ProcessEventLogMessage(nint a1, int a2, nint a3, nint a4);
@@ -59,9 +60,8 @@ public unsafe class MemoryManager
         return ProcessEventLogMessageHook.Original(a1, a2, a3, a4);
     }
 
-    [EzHook(Callback.Sig, false)]
-    public EzHook<Callback.AtkUnitBase_FireCallbackDelegate> FireCallbackHook;
-    private byte FireCallbackDetour(AtkUnitBase* addon, int valueCount, AtkValue* values, byte updateState)
+    public EzHook<AtkUnitBase.Delegates.FireCallback> FireCallbackHook;
+    private bool FireCallbackDetour(AtkUnitBase* addon, uint valueCount, AtkValue* values, bool updateState)
     {
         try
         {

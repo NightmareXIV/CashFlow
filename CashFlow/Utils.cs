@@ -125,7 +125,7 @@ public static unsafe class Utils
         }
     }
 
-    public static int ShopLoadedItems => AtkStage.Instance()->GetNumberArrayData()[(int)NumberArrayType.ItemSearch]->IntArray[401];
+    public static int ShopLoadedItems => AtkStage.Instance()->GetNumberArrayData()[(int)NumberArrayType.ItemSearch]->IntArray[402];
     public static List<ItemPrice> GetLoadedShopItems(bool onlyHq = false)
     {
         var ret = new List<ItemPrice>();
@@ -133,11 +133,11 @@ public static unsafe class Utils
         {
             var item = new ItemPrice()
             {
-                Price = AtkStage.Instance()->GetNumberArrayData()[(int)NumberArrayType.ItemSearch]->IntArray[402 + i * 6],
-                Amount = AtkStage.Instance()->GetNumberArrayData()[(int)NumberArrayType.ItemSearch]->IntArray[403 + i * 6],
-                HQ = AtkStage.Instance()->GetNumberArrayData()[(int)NumberArrayType.ItemSearch]->IntArray[404 + i * 6] == 1,
+                Price = AtkStage.Instance()->GetNumberArrayData()[(int)NumberArrayType.ItemSearch]->IntArray[403 + i * 6],
+                Amount = AtkStage.Instance()->GetNumberArrayData()[(int)NumberArrayType.ItemSearch]->IntArray[404 + i * 6],
+                HQ = AtkStage.Instance()->GetNumberArrayData()[(int)NumberArrayType.ItemSearch]->IntArray[405 + i * 6] == 1,
                 Retainer = MemoryHelper.ReadStringNullTerminated((nint)AtkStage.Instance()->GetStringArrayData()[(int)StringArrayType.ItemSearch]->StringArray[208 + i * 6].Value),
-                Index = i
+                Index = i,
             };
             ret.Add(item);
         }
