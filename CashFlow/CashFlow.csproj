@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Authors>NightmareXIV, Asuna, Klia</Authors>
-        <Version>1.0.2.11</Version>
+        <Version>1.0.2.12</Version>
         <Configurations>Debug;Release</Configurations>
     </PropertyGroup>
 
@@ -32,8 +32,8 @@
 
     <ItemGroup>
         <PackageReference Include="CsvHelper" Version="33.1.0" />
-        <PackageReference Include="DalamudPackager" Version="14.0.1" />
-        <PackageReference Include="ECommons" Version="3.1.0.5" />
+        <PackageReference Include="DalamudPackager" Version="15.0.0" />
+        <PackageReference Include="ECommons" Version="3.2.0.6" />
         <PackageReference Include="MessagePack" Version="3.1.4" />
         <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
         <PackageReference Include="SqlKata" Version="4.0.1" />
