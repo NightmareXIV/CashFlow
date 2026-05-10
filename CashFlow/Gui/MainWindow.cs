@@ -54,7 +54,7 @@ public unsafe class MainWindow : ConfigWindow
             ("NPC Sale Log", TabNpcSales.Draw, null, true),
             ("NPC Purchase Log", TabNpcPurchases.Draw, null, true),
             ("Gil History", TabGilHistory.Draw, null, true),
-            ("Achat/Revente", TabDashboard.Draw, null, true),
+            ("Buy/Resell", TabDashboard.Draw, null, true),
             ("Settings", DrawSettings, null, true),
             ("Debug", TabDebug.Draw, ImGuiColors.DalamudGrey3, true),
             ]);

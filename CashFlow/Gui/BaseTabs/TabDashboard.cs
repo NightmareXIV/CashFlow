@@ -59,9 +59,9 @@ public unsafe class TabDashboard
             NeedsUpdate = false;
         }
         NuiTools.ButtonTabs("DashTabs", [[
-            new("Résumé", DrawResume),
+            new("Summary", DrawResume),
             new("Items", DrawItems),
-            new("Par Serveur", DrawServerInventory),
+            new("Per Server", DrawServerInventory),
             new("Retainers", DrawRetainers)
         ]], child: false);
     }
@@ -339,7 +339,7 @@ public unsafe class TabDashboard
         });
     }
 
-    // ── Résumé ──
+    // ── Summary ──
 
     private void DrawResume()
     {
@@ -349,15 +349,15 @@ public unsafe class TabDashboard
             ImGui.TableSetupColumn("Value");
             ImGui.TableHeadersRow();
 
-            ResumeRow("Total Achats (MB)", -TotalFlipCost);
-            ResumeRow("Total Ventes (items achetés)", TotalFlipSales);
-            ResumeRow("Taxes MB Payées", -TotalTaxPaid);
+            ResumeRow("Total Purchases (MB)", -TotalFlipCost);
+            ResumeRow("Total Sales (purchased items)", TotalFlipSales);
+            ResumeRow("MB Taxes Paid", -TotalTaxPaid);
 
             ImGui.TableNextRow();
             ImGui.TableNextColumn(); ImGui.Separator();
             ImGui.TableNextColumn(); ImGui.Separator();
 
-            ResumeRow("Profit Net", FlipProfit);
+            ResumeRow("Net Profit", FlipProfit);
 
             ImGui.TableNextRow();
             ImGui.TableNextColumn();
@@ -371,15 +371,15 @@ public unsafe class TabDashboard
             ImGui.TableNextColumn(); ImGui.Separator();
 
             ImGui.TableNextRow();
-            ImGui.TableNextColumn(); ImGuiEx.Text("Items Distincts Achetés");
+            ImGui.TableNextColumn(); ImGuiEx.Text("Distinct Items Purchased");
             ImGui.TableNextColumn(); ImGuiEx.Text($"{DistinctItems}");
 
             ImGui.TableNextRow();
-            ImGui.TableNextColumn(); ImGuiEx.Text("Items Entièrement Vendus");
+            ImGui.TableNextColumn(); ImGuiEx.Text("Fully Sold Items");
             ImGui.TableNextColumn(); ImGuiEx.Text($"{FullySoldItems}");
 
             ImGui.TableNextRow();
-            ImGui.TableNextColumn(); ImGuiEx.Text("Stock Restant (valeur estimée)");
+            ImGui.TableNextColumn(); ImGuiEx.Text("Remaining Stock (estimated value)");
             ImGui.TableNextColumn(); ImGuiEx.Text($"{EstimatedRemainingValue:N0}");
 
             ImGui.EndTable();
@@ -521,7 +521,7 @@ public unsafe class TabDashboard
         }
     }
 
-    // ── Par Serveur ──
+    // ── Per Server ──
 
     private void DrawServerInventory()
     {
