@@ -295,7 +295,10 @@ public unsafe class SqliteDataProvider : DataProviderBase
     public override List<ShopPurchaseSqlDescriptor> GetShopPurchases(long unixTimeMsMin = 0, long unixTimeMsMax = 0)
     {
         using var db = new GilsightQueryFactory();
-        return [.. db.Query(Tables.ShopPurchases).Get<ShopPurchaseSqlDescriptor>()];
+        var result = db.Query(Tables.ShopPurchases);
+        if(unixTimeMsMin > 0) result = result.Where("UnixTime", ">=", unixTimeMsMin);
+        if(unixTimeMsMax > 0) result = result.Where("UnixTime", "<=", unixTimeMsMax);
+        return [.. result.Get<ShopPurchaseSqlDescriptor>()];
     }
 
     public override void RecordNpcPurchase(NpcPurchaseSqlDescriptor npcPurchaseSqlDescriptor)

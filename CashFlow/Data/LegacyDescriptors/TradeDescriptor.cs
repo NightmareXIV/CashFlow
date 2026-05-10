@@ -34,7 +34,8 @@ public class TradeDescriptor : IDescriptorBase
     public string[][] GetCsvExport()
     {
         var ret = new List<string[]>();
-        for(int i = 0; i < Math.Min(1, ReceivedItems?.Length ?? 0); i++)
+        var itemCount = ReceivedItems?.Length ?? 0;
+        for(int i = 0; i < Math.Max(1, itemCount); i++)
         {
             var item = ReceivedItems?.SafeSelect(i);
             ret.Add([
@@ -48,5 +49,12 @@ public class TradeDescriptor : IDescriptorBase
             ]);
         }
         return [.. ret];
+    }
+
+    public unsafe (string table, Dictionary<string, object> conditions) GetDeleteKey()
+    {
+        var cid = TradePartnerCID;
+        var self = CidUlong;
+        return ("Trades", new() { ["Cid"] = *(long*)&cid, ["Self"] = *(long*)&self, ["UnixTime"] = UnixTime, ["Gil"] = ReceivedGil });
     }
 }

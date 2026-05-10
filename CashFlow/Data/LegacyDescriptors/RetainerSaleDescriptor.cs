@@ -65,4 +65,10 @@ public class RetainerSaleDescriptor : IEquatable<RetainerSaleDescriptor>, IDescr
     {
         return !(left == right);
     }
+
+    public unsafe (string table, Dictionary<string, object> conditions) GetDeleteKey()
+    {
+        var cid = CidUlong;
+        return ("RetainerSales", new() { ["Cid"] = *(long*)&cid, ["UnixTime"] = UnixTime, ["Item"] = ItemID, ["Price"] = Price, ["Quantity"] = Quantity });
+    }
 }

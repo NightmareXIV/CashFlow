@@ -22,12 +22,13 @@ public unsafe class TabNpcPurchases : BaseTab<NpcPurchaseSqlDescriptor>
 
     public override void DrawTable()
     {
-        if(ImGuiEx.BeginDefaultTable(["Your Character", "Paid", "~Item Name", "Qty", "Date"], extraFlags: ImGuiTableFlags.Sortable | ImGuiTableFlags.SortTristate))
+        if(ImGuiEx.BeginDefaultTable(["Your Character", "Paid", "~Item Name", "Qty", "Date", "##actions"], extraFlags: ImGuiTableFlags.Sortable | ImGuiTableFlags.SortTristate))
         {
             ImGuiCheckSorting();
             for(var i = IndexBegin; i < IndexEnd; i++)
             {
                 var t = Data[i];
+                if(!IsRowVisible(i)) continue;
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 {
@@ -54,6 +55,10 @@ public unsafe class TabNpcPurchases : BaseTab<NpcPurchaseSqlDescriptor>
 
                 ImGui.TableNextColumn();
                 ImGuiEx.Text(DateTimeOffset.FromUnixTimeMilliseconds(t.UnixTime).ToPreferredTimeString());
+
+                ImGui.TableNextColumn();
+                DrawRowActions(i);
+                DrawRowHighlight();
             }
             ImGui.EndTable();
         }

@@ -31,4 +31,15 @@ public unsafe sealed class CashflowFileDialogManager : IDisposable
             }
         }, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
     }
+
+    public void OpenXlsx(Action<string> callback)
+    {
+        Manager.SaveFileDialog("Export as Excel...", "", "exported", "xlsx", (result, path) =>
+        {
+            if(result)
+            {
+                callback(path.EndsWith(".xlsx")?path:$"{path}.xlsx");
+            }
+        }, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+    }
 }

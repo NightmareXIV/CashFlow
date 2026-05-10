@@ -11,8 +11,8 @@ public unsafe class TabTradeLog : BaseTab<TradeDescriptor>
     public Dictionary<ulong, long> CharasGivenGilToTotal = [];
     public Dictionary<ulong, long> CharasRecvGilFromTotal = [];
     public bool OnlyGil = false;
-    private string[] OnlyGilHeaders = ["Your Character", "Counterparty", "Date", "~Gil"];
-    private string[] NormalHeaders = ["Your Character", "Counterparty", "Date", "Gil", "~Items"];
+    private string[] OnlyGilHeaders = ["Your Character", "Counterparty", "Date", "~Gil", "##actions"];
+    private string[] NormalHeaders = ["Your Character", "Counterparty", "Date", "Gil", "~Items", "##actions"];
     public override void DrawExtraFilters()
     {
         ImGui.SameLine();
@@ -42,6 +42,7 @@ public unsafe class TabTradeLog : BaseTab<TradeDescriptor>
             for(var i = IndexBegin; i < IndexEnd; i++)
             {
                 var t = Data[i];
+                if(!IsRowVisible(i)) continue;
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 {
@@ -111,6 +112,9 @@ public unsafe class TabTradeLog : BaseTab<TradeDescriptor>
                         }
                     }
                 }
+                ImGui.TableNextColumn();
+                DrawRowActions(i);
+                DrawRowHighlight();
             }
             ImGui.EndTable();
         }

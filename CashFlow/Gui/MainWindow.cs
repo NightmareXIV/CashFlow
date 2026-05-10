@@ -1,10 +1,15 @@
-﻿using CashFlow.Gui.BaseTabs;
+﻿using CashFlow.Data;
+using CashFlow.Data.LegacyDescriptors;
+using CashFlow.Data.SqlDescriptors;
+using CashFlow.Gui.BaseTabs;
 using CashFlow.Gui.Components;
+using ClosedXML.Excel;
 using ECommons.ChatMethods;
 using ECommons.Funding;
 using ECommons.SimpleGui;
 using ECommons.Throttlers;
 using NightmareUI;
+using System.IO;
 
 namespace CashFlow.Gui;
 public unsafe class MainWindow : ConfigWindow
@@ -16,6 +21,7 @@ public unsafe class MainWindow : ConfigWindow
     public TabNpcPurchases TabNpcPurchases = new();
     public TabNpcSales TabNpcSales = new();
     public TabGilHistory TabGilHistory = new();
+    public TabDashboard TabDashboard = new();
     public DateTime DateGraphStart = DateTimeOffset.FromUnixTimeSeconds(C.GraphStartDate).ToLocalTime().DateTime;
     public string DateGraphStartStr = DateTimeOffset.FromUnixTimeSeconds(C.GraphStartDate).ToLocalTime().DateTime.ToString(DateWidget.DateFormat);
 
@@ -29,6 +35,7 @@ public unsafe class MainWindow : ConfigWindow
             TabNpcPurchases.NeedsUpdate = true;
             TabNpcSales.NeedsUpdate = true;
             TabGilHistory.NeedsUpdate = true;
+            TabDashboard.NeedsUpdate = true;
         }
     }
 
@@ -47,6 +54,7 @@ public unsafe class MainWindow : ConfigWindow
             ("NPC Sale Log", TabNpcSales.Draw, null, true),
             ("NPC Purchase Log", TabNpcPurchases.Draw, null, true),
             ("Gil History", TabGilHistory.Draw, null, true),
+            ("Achat/Revente", TabDashboard.Draw, null, true),
             ("Settings", DrawSettings, null, true),
             ("Debug", TabDebug.Draw, ImGuiColors.DalamudGrey3, true),
             ]);
@@ -113,5 +121,43 @@ public unsafe class MainWindow : ConfigWindow
             }
             ImGui.Unindent();
         }
+
+        ImGui.Separator();
+        ImGui.Checkbox("Exclude hidden rows from Achat/Revente analytics", ref C.ExcludeHiddenFromFlipAnalytics);
+        ImGuiEx.HelpMarker("When enabled, rows hidden in Purchase Log, Sale Log and Trade Log will not count in the Achat/Revente tab calculations");
+    }
+
+    public void ExportAllToXlsx(string pathToFile)
+    {
+        List<TradeDescriptor> trades = [.. TabTradeLog.Data];
+        List<ShopPurchaseSqlDescriptor> purchases = [.. TabShopPurchases.Data];
+        List<RetainerSaleDescriptor> sales = [.. TabRetainerSales.Data];
+        List<NpcSaleSqlDescriptor> npcSales = [.. TabNpcSales.Data];
+        List<NpcPurchaseSqlDescriptor> npcPurchases = [.. TabNpcPurchases.Data];
+        List<GilRecordSqlDescriptor> gilHistory = [.. TabGilHistory.Data];
+
+        if(trades.Count == 0 && purchases.Count == 0 && sales.Count == 0 && npcSales.Count == 0 && npcPurchases.Count == 0 && gilHistory.Count == 0) return;
+
+        S.ThreadPool.Run(() =>
+        {
+            if(File.Exists(pathToFile)) DeleteFileToRecycleBin(pathToFile);
+            using var wb = new XLWorkbook();
+
+            if(trades.Count > 0)
+                BaseTab<TradeDescriptor>.WriteSheetData(wb.AddWorksheet("Trade Log"), trades);
+            if(purchases.Count > 0)
+                BaseTab<ShopPurchaseSqlDescriptor>.WriteSheetData(wb.AddWorksheet("Purchase Log"), purchases);
+            if(sales.Count > 0)
+                BaseTab<RetainerSaleDescriptor>.WriteSheetData(wb.AddWorksheet("Sale Log"), sales);
+            if(npcSales.Count > 0)
+                BaseTab<NpcSaleSqlDescriptor>.WriteSheetData(wb.AddWorksheet("NPC Sale Log"), npcSales);
+            if(npcPurchases.Count > 0)
+                BaseTab<NpcPurchaseSqlDescriptor>.WriteSheetData(wb.AddWorksheet("NPC Purchase Log"), npcPurchases);
+            if(gilHistory.Count > 0)
+                BaseTab<GilRecordSqlDescriptor>.WriteSheetData(wb.AddWorksheet("Gil History"), gilHistory);
+
+            wb.SaveAs(pathToFile);
+            Svc.Framework.RunOnFrameworkThread(() => Svc.Chat.Print($"[CashFlow] All tabs exported to {pathToFile}"));
+        });
     }
 }
