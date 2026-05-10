@@ -1,7 +1,10 @@
 ﻿using CashFlow.Data;
+using CashFlow.DataProvider.Sqlite;
 using CashFlow.Gui.Components;
+using ClosedXML.Excel;
 using CsvHelper;
 using ECommons.Throttlers;
+using SqlKata.Execution;
 using System.Globalization;
 using System.IO;
 
@@ -24,6 +27,10 @@ public abstract unsafe class BaseTab<T> where T : IDescriptorBase
     private ImGuiSortDirection PrevRequestedSortDirection = ImGuiSortDirection.None;
     public int SortColumn = 0;
     private int PrevSortColumn = 0;
+    public HashSet<int> HiddenIndices = [];
+    private int PendingDeleteIndex = -1;
+    private bool RequestDeletePopup = false;
+    private bool ShowHidden = false;
 
     public virtual string SearchNameHint { get; } = "Search Player's Name...";
     public virtual string SearchItemHint { get; } = "Search Item...";
@@ -72,6 +79,7 @@ public abstract unsafe class BaseTab<T> where T : IDescriptorBase
         }
         if(ShouldDrawPaginator) DrawPaginator();
         DrawTable();
+        DrawDeleteConfirmPopup();
         if(RequestedSortDirection != PrevRequestedSortDirection || SortColumn != PrevSortColumn)
         {
             PrevSortColumn = SortColumn;
@@ -96,6 +104,7 @@ public abstract unsafe class BaseTab<T> where T : IDescriptorBase
             if(ImGui.InputTextWithHint("##SearchPlayer", SearchNameHint, ref SearchName, 50))
             {
                 Data.Clear();
+                HiddenIndices.Clear();
                 NeedsUpdate = true;
             }
             if(ImGui.IsItemActive())
@@ -108,6 +117,7 @@ public abstract unsafe class BaseTab<T> where T : IDescriptorBase
             if(ImGui.InputTextWithHint("##SearchItem", SearchItemHint, ref SearchItem, 50))
             {
                 Data.Clear();
+                HiddenIndices.Clear();
                 NeedsUpdate = true;
             }
             if(ImGui.IsItemActive())
@@ -119,6 +129,7 @@ public abstract unsafe class BaseTab<T> where T : IDescriptorBase
             if(isOpen)
             {
                 Data.Clear();
+                HiddenIndices.Clear();
                 NeedsUpdate = true;
                 blocked = true;
             }
@@ -147,6 +158,25 @@ public abstract unsafe class BaseTab<T> where T : IDescriptorBase
             S.CashflowFileDialogManager.Open(ExportToCSV);
         }
         ImGuiEx.Tooltip("Export as CSV");
+        ImGui.SameLine(0, 2);
+        if(ImGuiEx.IconButton(FontAwesomeIcon.FileExcel))
+        {
+            S.CashflowFileDialogManager.OpenXlsx(ExportToXlsx);
+        }
+        ImGuiEx.Tooltip("Export as Excel (.xlsx)");
+        ImGui.SameLine(0, 2);
+        if(ImGuiEx.IconButton(FontAwesomeIcon.FileArchive))
+        {
+            S.CashflowFileDialogManager.OpenXlsx(S.MainWindow.ExportAllToXlsx);
+        }
+        ImGuiEx.Tooltip("Export all tabs as Excel (.xlsx)");
+        if(HiddenIndices.Count > 0)
+        {
+            ImGui.SameLine(0, 4);
+            if(ImGuiEx.IconButton(ShowHidden ? FontAwesomeIcon.Eye : FontAwesomeIcon.EyeSlash))
+                ShowHidden = !ShowHidden;
+            ImGuiEx.Tooltip(ShowHidden ? $"Showing {HiddenIndices.Count} hidden rows (click to hide)" : $"{HiddenIndices.Count} hidden rows (click to reveal)");
+        }
     }
 
     public void Load(bool ignoreSearchFilters, bool clear = true)
@@ -194,11 +224,6 @@ public abstract unsafe class BaseTab<T> where T : IDescriptorBase
 
     public virtual void OnPostLoadDataAsync(List<T> newData) { }
 
-    /// <summary>
-    /// Called asynchronously
-    /// </summary>
-    /// <param name="data"></param>
-    /// <returns></returns>
     public virtual bool ShouldAddData(T data)
     {
         return true;
@@ -244,6 +269,94 @@ public abstract unsafe class BaseTab<T> where T : IDescriptorBase
         };
     }
 
+    public bool IsRowVisible(int index) => !HiddenIndices.Contains(index) || ShowHidden;
+
+    public void DrawRowActions(int index)
+    {
+        ImGui.PushID(index + 10000);
+        ImGui.PushFont(UiBuilder.IconFont);
+        if(ImGui.SmallButton(HiddenIndices.Contains(index) ? FontAwesomeIcon.Eye.ToIconString() : FontAwesomeIcon.EyeSlash.ToIconString()))
+        {
+            if(HiddenIndices.Contains(index))
+                HiddenIndices.Remove(index);
+            else
+                HiddenIndices.Add(index);
+        }
+        ImGui.PopFont();
+        ImGuiEx.Tooltip(HiddenIndices.Contains(index) ? "Show this row" : "Hide this row");
+        ImGui.SameLine(0, 2);
+        ImGui.PushFont(UiBuilder.IconFont);
+        if(ImGui.SmallButton(FontAwesomeIcon.Trash.ToIconString()))
+        {
+            PendingDeleteIndex = index;
+            RequestDeletePopup = true;
+        }
+        ImGui.PopFont();
+        ImGuiEx.Tooltip("Delete this row");
+        ImGui.PopID();
+    }
+
+    public void DrawRowHighlight()
+    {
+        var rowMin = ImGui.GetItemRectMin();
+        var rowMax = new Vector2(ImGui.GetWindowPos().X + ImGui.GetWindowSize().X, ImGui.GetItemRectMax().Y);
+        var mouse = ImGui.GetMousePos();
+        if(mouse.X >= rowMin.X && mouse.X <= rowMax.X && mouse.Y >= rowMin.Y && mouse.Y <= rowMax.Y)
+        {
+            ImGui.TableSetBgColor(ImGuiTableBgTarget.RowBg1, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 0.08f)));
+        }
+    }
+
+    private void DrawDeleteConfirmPopup()
+    {
+        if(RequestDeletePopup)
+        {
+            ImGui.OpenPopup("##ConfirmDeleteRow");
+            RequestDeletePopup = false;
+        }
+        ImGui.SetNextWindowSize(new Vector2(350, 0));
+        if(ImGui.BeginPopup("##ConfirmDeleteRow"))
+        {
+            ImGuiEx.Text("Delete this record permanently?");
+            ImGuiEx.Text(EColor.Red, "This cannot be undone.");
+            ImGui.Spacing();
+            if(ImGui.Button("Yes, delete"))
+            {
+                if(PendingDeleteIndex >= 0 && PendingDeleteIndex < Data.Count)
+                {
+                    var item = Data[PendingDeleteIndex];
+                    var (table, conditions) = item.GetDeleteKey();
+                    if(table != null && conditions != null)
+                    {
+                        S.WorkerThread.Enqueue(() =>
+                        {
+                            using var db = new GilsightQueryFactory();
+                            var query = db.Query(table);
+                            foreach(var kv in conditions)
+                                query = query.Where(kv.Key, kv.Value);
+                            query.Limit(1).Delete();
+                        });
+                    }
+                    Data.RemoveAt(PendingDeleteIndex);
+                    HiddenIndices.Remove(PendingDeleteIndex);
+                    var shifted = new HashSet<int>();
+                    foreach(var h in HiddenIndices)
+                        shifted.Add(h > PendingDeleteIndex ? h - 1 : h);
+                    HiddenIndices = shifted;
+                }
+                PendingDeleteIndex = -1;
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.SameLine();
+            if(ImGui.Button("Cancel"))
+            {
+                PendingDeleteIndex = -1;
+                ImGui.CloseCurrentPopup();
+            }
+            ImGui.EndPopup();
+        }
+    }
+
     public void ExportToCSV(string pathToFile)
     {
         if(Data.Count == 0) return;
@@ -252,7 +365,8 @@ public abstract unsafe class BaseTab<T> where T : IDescriptorBase
         {
             if(File.Exists(pathToFile)) DeleteFileToRecycleBin(pathToFile);
             using var fs = new FileStream(pathToFile, FileMode.Create);
-            using var writer = new StreamWriter(fs);
+            fs.Write([0xEF, 0xBB, 0xBF]);
+            using var writer = new StreamWriter(fs, new System.Text.UTF8Encoding(false));
             using var csv = new CsvWriter(writer, CultureInfo.CurrentCulture);
             csv.WriteFields(data[0].GetCsvHeaders());
             foreach(var t in data)
@@ -263,6 +377,56 @@ public abstract unsafe class BaseTab<T> where T : IDescriptorBase
                 }
             }
             fs.Flush();
+            Svc.Framework.RunOnFrameworkThread(() => Svc.Chat.Print($"[CashFlow] Export saved to {pathToFile}"));
         });
+    }
+
+    public void ExportToXlsx(string pathToFile)
+    {
+        if(Data.Count == 0) return;
+        List<T> data = [.. Data];
+        S.ThreadPool.Run(() =>
+        {
+            if(File.Exists(pathToFile)) DeleteFileToRecycleBin(pathToFile);
+            using var wb = new XLWorkbook();
+            var ws = wb.AddWorksheet("Export");
+            WriteSheetData(ws, data);
+            wb.SaveAs(pathToFile);
+            Svc.Framework.RunOnFrameworkThread(() => Svc.Chat.Print($"[CashFlow] Export saved to {pathToFile}"));
+        });
+    }
+
+    public static void WriteSheetData<TData>(IXLWorksheet ws, List<TData> data) where TData : IDescriptorBase
+    {
+        if(data.Count == 0) return;
+        var headers = data[0].GetCsvHeaders();
+        for(int c = 0; c < headers.Length; c++)
+        {
+            ws.Cell(1, c + 1).Value = headers[c].TrimStart('~');
+        }
+        var headerRange = ws.Range(1, 1, 1, headers.Length);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.FromArgb(0x4472C4);
+        headerRange.Style.Font.FontColor = XLColor.White;
+        headerRange.SetAutoFilter();
+
+        int row = 2;
+        foreach(var t in data)
+        {
+            foreach(var fields in t.GetCsvExport())
+            {
+                for(int c = 0; c < fields.Length; c++)
+                {
+                    if(long.TryParse(fields[c], out var num))
+                        ws.Cell(row, c + 1).Value = num;
+                    else
+                        ws.Cell(row, c + 1).Value = fields[c];
+                }
+                row++;
+            }
+        }
+
+        ws.SheetView.FreezeRows(1);
+        ws.Columns().AdjustToContents();
     }
 }

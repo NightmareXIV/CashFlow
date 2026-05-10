@@ -9,12 +9,13 @@ public unsafe class TabShopPurchases : BaseTab<ShopPurchaseSqlDescriptor>
     public override string SearchNameHint { get; } = "Search Player's/Retainer's Name...";
     public override void DrawTable()
     {
-        if(ImGuiEx.BeginDefaultTable(["Your Character", "Retainer", "Paid", "~Item", "##qty", "Date"], extraFlags: ImGuiTableFlags.Sortable | ImGuiTableFlags.SortTristate))
+        if(ImGuiEx.BeginDefaultTable(["Your Character", "Retainer", "Paid", "~Item", "##qty", "Date", "##actions"], extraFlags: ImGuiTableFlags.Sortable | ImGuiTableFlags.SortTristate))
         {
             ImGuiCheckSorting();
             for(var i = IndexBegin; i < IndexEnd; i++)
             {
                 var t = Data[i];
+                if(!IsRowVisible(i)) continue;
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 {
@@ -43,6 +44,10 @@ public unsafe class TabShopPurchases : BaseTab<ShopPurchaseSqlDescriptor>
 
                 ImGui.TableNextColumn();
                 ImGuiEx.Text(DateTimeOffset.FromUnixTimeMilliseconds(t.UnixTime).ToPreferredTimeString());
+
+                ImGui.TableNextColumn();
+                DrawRowActions(i);
+                DrawRowHighlight();
 
             }
             ImGui.EndTable();

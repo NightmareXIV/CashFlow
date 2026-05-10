@@ -5,4 +5,5 @@ public interface IDescriptorBase
     long UnixTime { get; set; }
     public string[] GetCsvHeaders();
     public string[][] GetCsvExport();
+    public (string table, Dictionary<string, object> conditions) GetDeleteKey() => (null, null);
 }

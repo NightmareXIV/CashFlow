@@ -27,4 +27,5 @@ public class Configuration : IEzConfig
     public HashSet<ulong> Blacklist = [];
     public bool UseGraphStartDate = false;
     public long GraphStartDate = DateTimeOffset.Now.ToUnixTimeSeconds();
+    public bool ExcludeHiddenFromFlipAnalytics = false;
 }

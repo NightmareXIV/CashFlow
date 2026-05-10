@@ -257,7 +257,7 @@ public static class DateWidget
         ImGui.SetNextItemWidth(ImGui.CalcTextSize("000").X + ImGui.GetFrameHeightWithSpacing() * 2);
         if(ImGui.InputInt("##dtMinutes", ref minutes))
         {
-            hours = Math.Clamp(minutes, 0, 23);
+            hours = Math.Clamp(minutes, 0, 59);
             valueChanged = true;
             dateOut = new DateTime(dateOut.Year, dateOut.Month, dateOut.Day, dateOut.Hour, minutes, dateOut.Second);
         }

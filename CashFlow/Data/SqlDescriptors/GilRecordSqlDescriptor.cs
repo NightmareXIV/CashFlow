@@ -36,4 +36,10 @@ public unsafe class GilRecordSqlDescriptor : IDescriptorBase
     {
         return ["Your Character", "Total Gil", "Diff", "Date"];
     }
+
+    public unsafe (string table, Dictionary<string, object> conditions) GetDeleteKey()
+    {
+        var cid = CidUlong;
+        return ("GilRecords", new() { ["Cid"] = *(long*)&cid, ["UnixTime"] = UnixTime, ["GilPlayer"] = GilPlayer, ["GilRetainer"] = GilRetainer });
+    }
 }

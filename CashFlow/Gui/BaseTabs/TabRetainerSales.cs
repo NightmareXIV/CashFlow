@@ -25,12 +25,13 @@ public unsafe class TabRetainerSales : BaseTab<RetainerSaleDescriptor>
 
     public override void DrawTable()
     {
-        if(ImGuiEx.BeginDefaultTable(["Your Character", "Your Retainer", "Buyer", "Paid", "~Item", "Qty", "Date"], extraFlags: ImGuiTableFlags.Sortable | ImGuiTableFlags.SortTristate))
+        if(ImGuiEx.BeginDefaultTable(["Your Character", "Your Retainer", "Buyer", "Paid", "~Item", "Qty", "Date", "##actions"], extraFlags: ImGuiTableFlags.Sortable | ImGuiTableFlags.SortTristate))
         {
             ImGuiCheckSorting();
             for(var i = IndexBegin; i < IndexEnd; i++)
             {
                 var t = Data[i];
+                if(!IsRowVisible(i)) continue;
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 {
@@ -65,6 +66,10 @@ public unsafe class TabRetainerSales : BaseTab<RetainerSaleDescriptor>
 
                 ImGui.TableNextColumn();
                 ImGuiEx.Text(DateTimeOffset.FromUnixTimeMilliseconds(t.UnixTime).ToPreferredTimeString());
+
+                ImGui.TableNextColumn();
+                DrawRowActions(i);
+                DrawRowHighlight();
             }
             ImGui.EndTable();
         }

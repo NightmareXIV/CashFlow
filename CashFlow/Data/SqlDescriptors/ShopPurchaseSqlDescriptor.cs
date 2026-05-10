@@ -59,4 +59,10 @@ public unsafe class ShopPurchaseSqlDescriptor : IDescriptorBase
                 DateTimeOffset.FromUnixTimeMilliseconds(UnixTime).ToPreferredTimeString(),
                 ]];
     }
+
+    public unsafe (string table, Dictionary<string, object> conditions) GetDeleteKey()
+    {
+        var cid = CidUlong;
+        return ("ShopPurchases", new() { ["Cid"] = *(long*)&cid, ["UnixTime"] = UnixTime, ["Item"] = Item, ["Price"] = Price, ["Quantity"] = Quantity });
+    }
 }

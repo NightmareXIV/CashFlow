@@ -57,4 +57,10 @@ public unsafe class NpcPurchaseSqlDescriptor : IDescriptorBase
                 DateTimeOffset.FromUnixTimeMilliseconds(UnixTime).ToPreferredTimeString()
                 ]];
     }
+
+    public unsafe (string table, Dictionary<string, object> conditions) GetDeleteKey()
+    {
+        var cid = CidUlong;
+        return ("NpcPurchases", new() { ["Cid"] = *(long*)&cid, ["UnixTime"] = UnixTime, ["Item"] = Item, ["Price"] = Price });
+    }
 }
